@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31605.320
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Bird_Classifier", "Bird_Classifier\Bird_Classifier.pyproj", "{4D4E8056-0D9F-4888-A068-99148488776B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D4E8056-0D9F-4888-A068-99148488776B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D4E8056-0D9F-4888-A068-99148488776B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AF7FB21B-5CF5-463B-8434-E9609CD99502}
+	EndGlobalSection
+EndGlobal
