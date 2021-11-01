@@ -9,7 +9,7 @@ import torch.optim as optim
 from torch.utils.data import random_split
 from PIL import Image
 import matplotlib.pyplot as plt
-from efficientnet_pytorch import EfficientNet
+
 
 from torch.utils.data import DataLoader
 import os
@@ -42,7 +42,7 @@ class TrainData():
         image = Image.open(img_path)
 
         label = self.labels.iloc[idx,1]
-        label_index = (label_list[label_list['label'] == label]).index.values
+        label_index = int((self.label_list[self.label_list['label'] == label]).index.values)
 
         if self.transform is not None:
             image = self.transform(image)
@@ -238,7 +238,7 @@ def pad(img, size_max=500):
 
 def train_loop(dataloader, model, loss_fn, optimizer):
 
-    def print_info():
+    def print_info(loss,train_loss,num_of_img,correct):
         loss, current = loss.item(), batch * len(X)+batch_size
         
         print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
@@ -247,9 +247,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
             train_loss, correct, num_of_img,
             100. * correct / num_of_img))
             
-        train_loss = 0
-        correct = 0
-        num_of_img = 0
+        
 
     model.train()
 
@@ -257,6 +255,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     train_loss = 0
     correct = 0
     num_of_img = 0
+    
 
     for batch, (X, y) in enumerate(dataloader):
         # Compute prediction and loss.
@@ -274,16 +273,22 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         # Backpropagation
         loss.backward()
         optimizer.step()
+
+        
         
         if batch % 100 == 99:
             # Save the model weight and print training information
             # for every 100 loop.
             torch.save(model.state_dict(), 'model_weights.pth')
-            print_info()
+            print_info(loss,train_loss)
+
+            train_loss = 0
+            correct = 0
+            num_of_img = 0
 
     if batch % 100 != 99:
         torch.save(model.state_dict(), 'model_weights.pth')
-        print_info()
+        print_info(loss,train_loss,num_of_img,correct)
         
 
 def val_loop(model, test_loader):
@@ -431,7 +436,7 @@ if mode==2 or mode==3:
     folder_name = 'testing_images'
 
     # Load test data from file
-    test_dataset = TestData(file_name, folder_name, transform)
+    test_dataset = TestData(file_name, folder_name, test_transform)
     test_dataloader = DataLoader(
         test_datase, 
         batch_size = batch_size, 
