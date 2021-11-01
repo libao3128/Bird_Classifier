@@ -16,6 +16,8 @@ from torch.utils.data import DataLoader
 
 
 batch_size = 5
+Mixup = True
+Progressive_Resizing = True
 
 
 class TrainData():
@@ -24,7 +26,8 @@ class TrainData():
     """
     def __init__(
             self, class_file, img_file,
-            transform=None, target_transform=None):
+            transform=None, target_transform=None,
+            is_train=False):
         self.get_labels()
         self.labels = pd.read_table(
             class_file, sep=" ",
@@ -34,21 +37,53 @@ class TrainData():
         self.img_file = img_file
         self.transform = transform
         self.target_transform = target_transform
+        self.is_train=is_train
 
     def __len__(self):
         return len(self.labels)
+
+    def set_is_train(self,is_train):
+        self.is_train = is_train
 
     def __getitem__(self,idx):
         img_path = os.path.join(self.img_file, self.labels.iloc[idx, 0])
         image = Image.open(img_path)
 
-        label = self.labels.iloc[idx,1]
-        label_index = int((self.label_list[self.label_list['label'] == label]).index.values)
+        label_name = self.labels.iloc[idx,1]
+        label_index = int((self.label_list[self.label_list['label'] == label_name]).index.values)
+
+        label = torch.zeros(200)
+        label[label_index] = 1.
 
         if self.transform is not None:
             image = self.transform(image)
+
+        #print(self.is_train)
+        # If data is for training, perform mixup, only perform mixup roughly on 1 for every 5 images
+        if self.is_train and idx > 0 and idx%5 == 0:
+            #print('mix')
+            # Choose another image/label randomly
+
+            mixup_idx = np.random.randint(0, len(self.labels)-1)
+            img_path = os.path.join(self.img_file, self.labels.iloc[mixup_idx, 0])
+            mixup_image  = Image.open(img_path)
+            mixup_label_name = self.labels.iloc[idx,1]
+            mixup_label_index = int((self.label_list[self.label_list['label'] == mixup_label_name]).index.values)
+            mixup_label = torch.zeros(200)
+            mixup_label[mixup_label_index] = 1.
             
-        return image.to(device),torch.tensor(label_index).to(device)
+            if self.transform is not None:
+                mixup_image = self.transform(mixup_image)
+
+
+            # Select a random number from the given beta distribution
+            # Mixup the images accordingly
+            alpha = 0.2
+            lam = np.random.beta(alpha, alpha)
+            image = lam * image + (1 - lam) * mixup_image
+            label = lam * label + (1 - lam) * mixup_label
+            
+        return image.to(device),label.to(device)
 
     def get_labels(self):
         self.label_list =  pd.read_table('classes.txt',names=['label'])
@@ -218,7 +253,6 @@ class ResNet50Attention(torch.nn.Module):
             return self._forward(x)
         
 
-
 def pad(img, size_max=500):
     """
     Pads images to the specified size (height x width). 
@@ -270,8 +304,8 @@ def train_loop(dataloader, model, loss_fn, optimizer):
 
         # Get the prediction and add one to correct if the prediction 
         # is correct.
-        pred = output.argmax(dim=1, keepdim=True)
-        correct += pred.eq(y.view_as(pred)).sum().item() 
+        pred = torch.argmax(output, dim=1)
+        correct += (pred == torch.argmax(y, dim=1)).float().sum() 
         num_of_img += batch_size
 
         # Backpropagation
@@ -295,7 +329,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         print_info(loss,train_loss,num_of_img,correct)
         
 
-def val_loop(model, test_loader):
+def val_loop(model, test_loader, is_test=False):
     '''
     The loop for the model validation
     '''
@@ -313,15 +347,19 @@ def val_loop(model, test_loader):
 
         
             test_loss += loss_fn(output, y)  # Add current loss to total loss
-            pred = output.argmax(dim=1, keepdim=True)  # Get the prediction
+            pred = torch.argmax(output, dim=1)  # Get the prediction
 
             # Add one to correct if the prediction is correct
-            correct += pred.eq(y.view_as(pred)).sum().item()  
+            correct += (pred == torch.argmax(y, dim=1)).float().sum()
 
     test_loss /= len(test_loader.dataset)  # Calculate average loss
 
     # Print testing information
-    print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    if is_test:
+        print('Test set:')
+    else:
+        print('Validation set:')
+    print(' Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
@@ -368,7 +406,7 @@ train_transform = transforms.Compose([
 
 val_transform = transforms.Compose([
    transforms.Lambda(pad),
-   transforms.CenterCrop((300, 300)),
+   transforms.CenterCrop((375, 375)),
    transforms.ToTensor(),
    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
@@ -415,12 +453,26 @@ if mode==1 or mode==3:
 
     # Set random seed to ensure the training process reproducible
     torch.manual_seed(0)
-
+    _,test_dataset = random_split(Data,[2700,300])
+    Data.is_train = Mixup
+    torch.manual_seed(0)
+    Data,_ = random_split(Data,[2700,300])
+    test_dataloader = DataLoader(
+            test_dataset,
+            batch_size = batch_size,
+            shuffle = True)  
+    
+   
+    
     for i in range(epoch):
         # Loop for 'epoch' times to train the model
 
+        print('epoch:', i, ' learning rate:', scheduler.get_last_lr()[0])  
+
         # Split the data into training data and validation data randomly
-        train_dataset,validation_dataset = random_split(Data,[2500,500])
+        train_dataset,validation_dataset = random_split(Data,[2400,300])
+        
+        
         train_dataloader = DataLoader( 
             train_dataset, 
             batch_size = batch_size, 
@@ -434,10 +486,11 @@ if mode==1 or mode==3:
         train_loop(train_dataloader,model,loss_fn,optimizer)
         # Go to validation loop function to validate the model
         val_loop(model,val_dataloader)
+        # Go to validation loop function to test the model
+        val_loop(model,test_dataloader,True)
         
-        # Decrease learning rate by scheduler and print current learning rate
-        scheduler.step()
-        print(i, scheduler.get_last_lr()[0])
+        scheduler.step() # Decrease learning rate by scheduler 
+        
 
 # Testing Process     
 if mode==2 or mode==3:
