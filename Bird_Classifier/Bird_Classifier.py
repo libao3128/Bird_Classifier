@@ -280,7 +280,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
             # Save the model weight and print training information
             # for every 100 loop.
             torch.save(model.state_dict(), 'model_weights.pth')
-            print_info(loss,train_loss)
+            print_info(loss,train_loss,num_of_img,correct)
 
             train_loss = 0
             correct = 0
