@@ -7,6 +7,9 @@
 testing_images/
 training_images/
 
+# weight file
+*.pth
+
 # User-specific files
 *.rsuser
 *.suo
