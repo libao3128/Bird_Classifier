@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import random_split
 from PIL import Image
+import os
 
 
 
@@ -237,6 +238,9 @@ def pad(img, size_max=500):
 
 
 def train_loop(dataloader, model, loss_fn, optimizer):
+    '''
+    The loop for the model training
+    '''
 
     def print_info(loss,train_loss,num_of_img,correct):
         loss, current = loss.item(), batch * len(X)+batch_size
@@ -292,7 +296,9 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         
 
 def val_loop(model, test_loader):
-    # The loop for the model validation
+    '''
+    The loop for the model validation
+    '''
 
     model.eval()  # Set the model to evaluate mode
 
@@ -323,6 +329,10 @@ def val_loop(model, test_loader):
 
 
 def test(model,test_loader):
+    '''
+    The loop for the model testing
+    '''
+
     model.eval()
 
     file = open('answer.txt','w')
@@ -343,7 +353,6 @@ def test(model,test_loader):
     file.close()
     
     model.train()
-
 
 # Initialize the model and transform used in model
 train_transform = transforms.Compose([
@@ -438,7 +447,7 @@ if mode==2 or mode==3:
     # Load test data from file
     test_dataset = TestData(file_name, folder_name, test_transform)
     test_dataloader = DataLoader(
-        test_datase, 
+        test_dataset, 
         batch_size = batch_size, 
         shuffle = False)     
 
