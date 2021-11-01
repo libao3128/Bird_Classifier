@@ -8,11 +8,11 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import random_split
 from PIL import Image
-import matplotlib.pyplot as plt
+
 
 
 from torch.utils.data import DataLoader
-import os
+
 
 batch_size = 5
 
