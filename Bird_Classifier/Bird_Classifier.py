@@ -9,16 +9,18 @@ import torch.optim as optim
 from torch.utils.data import random_split
 from PIL import Image
 import os
+import matplotlib.pyplot as plt
 
 
 
 from torch.utils.data import DataLoader
 
 
-batch_size = 5
-Mixup = True
+batch_size = 10
+Mixup = False
 Progressive_Resizing = True
-
+image_size = 375
+log_file = open('log_info.txt','a')
 
 class TrainData():
     """
@@ -82,6 +84,10 @@ class TrainData():
             lam = np.random.beta(alpha, alpha)
             image = lam * image + (1 - lam) * mixup_image
             label = lam * label + (1 - lam) * mixup_label
+
+
+        #plt.imshow(  image.permute(1, 2, 0)  )
+        #plt.show()
             
         return image.to(device),label.to(device)
 
@@ -171,7 +177,7 @@ class ResNet50Attention(torch.nn.Module):
         self.pretrained = pretrained
         self.use_attention = use_attention
 
-
+        
         net.fc = torch.nn.Linear(
             in_features=net.fc.in_features,
             out_features=num_classes,
@@ -280,8 +286,12 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         loss, current = loss.item(), batch * len(X)+batch_size
         
         print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        log_file.write(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]\n")
         train_loss /=  num_of_img
         print('Train set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
+            train_loss, correct, num_of_img,
+            100. * correct / num_of_img))
+        log_file.write('Train set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             train_loss, correct, num_of_img,
             100. * correct / num_of_img))
             
@@ -357,9 +367,14 @@ def val_loop(model, test_loader, is_test=False):
     # Print testing information
     if is_test:
         print('Test set:')
+        log_file.write('Test set:\n')
     else:
         print('Validation set:')
+        log_file.write('Validation set:\n')
     print(' Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
+        test_loss, correct, len(test_loader.dataset),
+        100. * correct / len(test_loader.dataset)))
+    log_file.write(' Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
@@ -392,20 +407,35 @@ def test(model,test_loader):
     
     model.train()
 
+
+def log_info():
+    
+    log_file.write('batch_size:'+str(batch_size)+'\n')
+    log_file.write('MixUp:'+str(Mixup)+'\n')
+    log_file.write('Progressive_Resizing:'+str(Progressive_Resizing)+'\n')
+    if Progressive_Resizing:
+        log_file.write('img_size:'+str(image_size)+'\n')
+
+log_info()
+
 # Initialize the model and transform used in model
 train_transform = transforms.Compose([
    transforms.Lambda(pad),
+   transforms.Resize([image_size], antialias=True),
+   
    transforms.RandomOrder([
-       transforms.RandomCrop((375, 375)),
+       transforms.RandomCrop((image_size*0.8)),
        transforms.RandomHorizontalFlip(),
        transforms.RandomVerticalFlip()
-       ]),
+   ]),
+   
    transforms.ToTensor(),
    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
    ])
 
 val_transform = transforms.Compose([
-   transforms.Lambda(pad),
+   
+   
    transforms.CenterCrop((375, 375)),
    transforms.ToTensor(),
    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -415,18 +445,21 @@ test_transform = val_transform
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = ResNet50Attention()
+model = models.resnet152(pretrained=True)
+model.fc = torch.nn.Linear(
+            in_features=model.fc.in_features,
+            out_features=200
+            )
 model.to(device)
-
 # Ask user if they want to load the weight trained before
 print("load?(y/n)")
 load=input()
 if load=='y':
-    try:
+    #try:
         model.load_state_dict(torch.load('model_weights.pth'))
         print("load weight")
-    except:
-        print("load failed")
+    #except:
+     #   print("load failed")
 
 # Get the mode from user's input
 print("Choose mode: (1) train (2) test (3) train and test")
@@ -446,20 +479,22 @@ if mode==1 or mode==3:
     epoch = int(input())
 
     # Load data and set optimizer, scheduler and loss function
-    Data = TrainData("training_labels.txt",'training_images',train_transform)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma = 0.9)
     loss_fn = nn.CrossEntropyLoss()
 
     # Set random seed to ensure the training process reproducible
     torch.manual_seed(0)
+    Data = TrainData("training_labels.txt",'training_images',test_transform)
     _,test_dataset = random_split(Data,[2700,300])
+
+    Data = TrainData("training_labels.txt",'training_images',train_transform)
     Data.is_train = Mixup
     torch.manual_seed(0)
     Data,_ = random_split(Data,[2700,300])
     test_dataloader = DataLoader(
             test_dataset,
-            batch_size = batch_size,
+            batch_size = batch_size, 
             shuffle = True)  
     
    
@@ -467,7 +502,9 @@ if mode==1 or mode==3:
     for i in range(epoch):
         # Loop for 'epoch' times to train the model
 
-        print('epoch:', i, ' learning rate:', scheduler.get_last_lr()[0])  
+        epoch_info = 'epoch:'+ str(i)+ ' learning rate:'+ str(scheduler.get_last_lr()[0])
+        print(epoch_info)  
+        log_file.write(epoch_info+'\n')
 
         # Split the data into training data and validation data randomly
         train_dataset,validation_dataset = random_split(Data,[2400,300])
@@ -488,6 +525,8 @@ if mode==1 or mode==3:
         val_loop(model,val_dataloader)
         # Go to validation loop function to test the model
         val_loop(model,test_dataloader,True)
+        print()
+        log_file.write('\n')
         
         scheduler.step() # Decrease learning rate by scheduler 
         
@@ -507,7 +546,7 @@ if mode==2 or mode==3:
     # Go to test function to test and output predict result 
     test(model,test_dataloader)
 
-
+log_file.close()
 
 
 
