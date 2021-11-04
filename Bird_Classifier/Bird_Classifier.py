@@ -161,7 +161,7 @@ class Attention(torch.nn.Module):
         return x
 
 
-class ResNet50Attention(torch.nn.Module):
+class ResNet152Attention(torch.nn.Module):
     """
     Attention-enhanced ResNet-50 model.
     """
@@ -450,7 +450,7 @@ model.fc = torch.nn.Linear(
             in_features=model.fc.in_features,
             out_features=200
             )
-mode = ResNet50Attention()
+mode = ResNet152Attention()
 model.to(device)
 # Ask user if they want to load the weight trained before
 print("load?(y/n)")
