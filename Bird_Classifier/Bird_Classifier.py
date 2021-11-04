@@ -69,7 +69,7 @@ class TrainData():
             mixup_idx = np.random.randint(0, len(self.labels)-1)
             img_path = os.path.join(self.img_file, self.labels.iloc[mixup_idx, 0])
             mixup_image  = Image.open(img_path)
-            mixup_label_name = self.labels.iloc[idx,1]
+            mixup_label_name =  self.labels.iloc[idx,1]
             mixup_label_index = int((self.label_list[self.label_list['label'] == mixup_label_name]).index.values)
             mixup_label = torch.zeros(200)
             mixup_label[mixup_label_index] = 1.
@@ -445,22 +445,22 @@ test_transform = transforms.Compose([
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = models.resnet152(pretrained=True)
-model.fc = torch.nn.Linear(
-            in_features=model.fc.in_features,
+CNN_model = models.resnet152(pretrained=True)
+CNN_model.fc = torch.nn.Linear(
+            in_features=CNN_model.fc.in_features,
             out_features=200
             )
 
-model.to(device)
+CNN_model.to(device)
 # Ask user if they want to load the weight trained before
 print("load?(y/n)")
 load=input()
 if load=='y':
-    #try:
-        model.load_state_dict(torch.load('model_weights.pth'))
+    try:
+        CNN_model.load_state_dict(torch.load('model_weights.pth'))
         print("load weight")
-    #except:
-     #   print("load failed")
+    except:
+        print("load failed")
 
 # Get the mode from user's input
 print("Choose mode: (1) train (2) test (3) train and test")
@@ -480,7 +480,7 @@ if mode==1 or mode==3:
     epoch = int(input())
 
     # Load data and set optimizer, scheduler and loss function
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(CNN_model.parameters(), lr=learning_rate)
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma = 0.9)
     loss_fn = nn.CrossEntropyLoss()
 
@@ -521,11 +521,11 @@ if mode==1 or mode==3:
             shuffle = True)         
 
         # Go to train loop function to train the model
-        train_loop(train_dataloader,model,loss_fn,optimizer)
+        train_loop(train_dataloader,CNN_model,loss_fn,optimizer)
         # Go to validation loop function to validate the model
-        val_loop(model,val_dataloader)
+        val_loop(CNN_model,val_dataloader)
         # Go to validation loop function to test the model
-        val_loop(model,test_dataloader,True)
+        val_loop(CNN_model,test_dataloader,True)
         print()
         log_file.write('\n')
         
@@ -545,7 +545,7 @@ if mode==2 or mode==3:
         shuffle = False)     
 
     # Go to test function to test and output predict result 
-    test(model,test_dataloader)
+    test(CNN_model,test_dataloader)
 
 log_file.close()
 
