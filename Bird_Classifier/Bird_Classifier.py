@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 
 
 batch_size = 10
-Mixup = False
+Mixup = True
 Progressive_Resizing = True
 image_size = 375
 log_file = open('log_info.txt','a')
@@ -424,7 +424,7 @@ train_transform = transforms.Compose([
    transforms.Resize([image_size], antialias=True),
    
    transforms.RandomOrder([
-       transforms.RandomCrop((image_size*0.8)),
+       transforms.RandomCrop((int(image_size*0.8),int(image_size*0.8))),
        transforms.RandomHorizontalFlip(),
        transforms.RandomVerticalFlip()
    ]),
@@ -435,8 +435,8 @@ train_transform = transforms.Compose([
 
 val_transform = transforms.Compose([
    
-   
-   transforms.CenterCrop((375, 375)),
+   transforms.Lambda(pad),
+   transforms.CenterCrop((375,375)),
    transforms.ToTensor(),
    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
