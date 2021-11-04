@@ -44,7 +44,7 @@ There is only one .py file named **'Bird_Classifier.py'**. You can run it simply
 - This means that whether you want to load the trained weight for the model.
 - If 'y':
         1. Notice that there should be a weight file named **'model_weights.pth'** in the same directory of code.
-        2. You can get my trained weight here and reprodouce my result.
+        **2. You can get my trained weight here and reprodouce my result [here](https://drive.google.com/drive/folders/1Hk1q-1CZmIRAhepAvOguJvB8TaKQR64C?usp=sharing)**.
 ### Choose mode: (1) train (2) test (3) train and test
 - This means which mode do you want to set.
 - If **'1'** :
@@ -70,4 +70,18 @@ The first line shows what epoch it is now and its learning rate now.
 The following lines shows the process of the epoch and the total loss, average loss and accuracy of the prediction.
 The last line shows the performance of model on validation data.
 
-In testing process, the program will not show any information on console and it will shut down the program once it finish the prediction.
+In testing process, the program will not show any information on console and it will shut down once the prediction has been finished.
+
+## Reproducing submission
+To reproduce my result on CodaLab, please follow the step:
+1. Install the required dependencies mentioned above.
+2. Download the required dataset and label file [here](https://competitions.codalab.org/competitions/35668?secret_key=09789b13-35ec-4928-ac0f-6c86631dda07#participate-get_starting_kit) and put it with **'Bird_Classifier.py'** in the same directory.
+3. Install the weight file [here](https://drive.google.com/drive/folders/1Hk1q-1CZmIRAhepAvOguJvB8TaKQR64C?usp=sharing)
+4. Run **'Bird_Classifier.py'** and follow the input below:
+    1. load?(y/n)
+        - input 'y'
+    2. Choose mode: (1) train (2) test (3) train and test
+        - input '2'
+
+    then the program will start generate the prediction result.
+5. Get answer.txt, zip it and upload it to CodaLab.
