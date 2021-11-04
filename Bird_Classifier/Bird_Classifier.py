@@ -170,7 +170,7 @@ class ResNet152Attention(torch.nn.Module):
     def __init__(
             self, num_classes=200, 
             pretrained=True, use_attention=True):
-        super(ResNet50Attention, self).__init__()
+        super(ResNet152Attention, self).__init__()
         net = self.weights_loader(pretrained=pretrained)
 
         self.num_classes = num_classes
@@ -420,7 +420,7 @@ log_info()
 
 # Initialize the model and transform used in model
 train_transform = transforms.Compose([
-   transforms.Lambda(pad),
+   
    transforms.Resize([image_size], antialias=True),
    
    transforms.RandomOrder([
@@ -435,7 +435,7 @@ train_transform = transforms.Compose([
 
 test_transform = transforms.Compose([
    
-   transforms.Lambda(pad),
+   
    transforms.CenterCrop((375,375)),
    transforms.ToTensor(),
    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -450,7 +450,7 @@ model.fc = torch.nn.Linear(
             in_features=model.fc.in_features,
             out_features=200
             )
-mode = ResNet152Attention()
+
 model.to(device)
 # Ask user if they want to load the weight trained before
 print("load?(y/n)")
