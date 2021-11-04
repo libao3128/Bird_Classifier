@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
 
-batch_size = 10
+batch_size = 5
 Mixup = True
 Progressive_Resizing = True
 image_size = 375
@@ -424,7 +424,7 @@ train_transform = transforms.Compose([
    transforms.Resize([image_size], antialias=True),
    
    transforms.RandomOrder([
-       transforms.RandomCrop((int(image_size*0.8),int(image_size*0.8))),
+       transforms.RandomCrop((int(image_size),int(image_size))),
        transforms.RandomHorizontalFlip(),
        transforms.RandomVerticalFlip()
    ]),
@@ -433,7 +433,7 @@ train_transform = transforms.Compose([
    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
    ])
 
-val_transform = transforms.Compose([
+test_transform = transforms.Compose([
    
    transforms.Lambda(pad),
    transforms.CenterCrop((375,375)),
@@ -441,7 +441,7 @@ val_transform = transforms.Compose([
    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-test_transform = val_transform
+
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -450,6 +450,7 @@ model.fc = torch.nn.Linear(
             in_features=model.fc.in_features,
             out_features=200
             )
+mode = ResNet50Attention()
 model.to(device)
 # Ask user if they want to load the weight trained before
 print("load?(y/n)")
