@@ -66,6 +66,7 @@ After you specify the input above, the program will start training or predicting
 
 In training process, you would see the training log on console like the image below.
 ![](https://i.imgur.com/XVlOR0W.png)
+
 The first line shows what epoch it is now and its learning rate now.
 The following lines shows the process of the epoch and the total loss, average loss and accuracy of the prediction.
 The last line shows the performance of model on validation data.
