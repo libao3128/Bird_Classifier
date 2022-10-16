@@ -1,4 +1,7 @@
 # Bird_Classifier
+- Author: Li-Chun Huang
+- Institute: Department of Computer Science at National Yang Ming Chiao Tung University
+- Email: libao3128.cs08@nycu.edu.tw
 ## Introduction
 The project is used for **2021 VRDL HW1** competition on CodaLab. It can be used to classify the birds into 200 specises by providing the image of them.
 You can get more information and download the dataset and related file [here](https://competitions.codalab.org/competitions/35668?secret_key=09789b13-35ec-4928-ac0f-6c86631dda07#participate-get_starting_kit).
